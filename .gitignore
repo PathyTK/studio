@@ -11,3 +11,12 @@ slides/sessions/
 # internal planning notes (kept local, not for the public repo)
 questions.md
 task.md
+
+# secrets: only .env.example is tracked
+.env
+.env.*
+!.env.example
+api/data/
+
+# Vercel CLI link (project/org ids)
+.vercel

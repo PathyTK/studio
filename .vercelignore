@@ -1,0 +1,9 @@
+# Keep the rest out of CLI uploads: slides are ~2 GB, repos/ are separate git repos, .env* hold secrets.
+repos
+slides
+.env
+.env.*
+!.env.example
+node_modules
+studio/node_modules
+studio/dist

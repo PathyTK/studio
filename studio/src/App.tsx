@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { DEMO, SlideEntry, SlideMetadata, listSlides, openSlide } from './api';
-import { allSlidesWithAnnotations } from './storage';
+import { allSlidesWithAnnotations, onAnnotationsSaved } from './storage';
+import { SyncState, onSyncState, signOutCleanup, startSync, stopSync } from './sync';
 import { LONG_LINK, buildShareLink, consumeShareLink } from './share';
 import Viewer from './Viewer';
 import { Theme, applyTheme, initialTheme } from './theme';
 import ThemeToggle from './ThemeToggle';
 import UploadBox from './UploadBox';
+import AuthModal from './AuthModal';
+import { AuthConfig, User, fetchConfig, fetchMe, logout } from './auth';
 
 // Comma-separated recipients; override at build time with VITE_CONTACT_EMAIL.
 const CONTACT = (import.meta.env.VITE_CONTACT_EMAIL as string | undefined) || 'aws@pathy.ai,oussama@pathy.ai';
@@ -19,7 +22,41 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState('');
   const [theme, setTheme] = useState<Theme>(initialTheme);
+  const [user, setUser] = useState<User | null>(null);
+  const [authCfg, setAuthCfg] = useState<AuthConfig | null>(null);
+  const [authModal, setAuthModal] = useState<{ reason?: string } | null>(null);
+  const [sync, setSync] = useState<SyncState>('idle');
+  useEffect(() => onSyncState(setSync), []);
   useEffect(() => applyTheme(theme), [theme]);
+
+  // Accounts live on the pathy-api service. Demo mode has no backend, so no sign-in there.
+  useEffect(() => {
+    if (DEMO) return;
+    fetchConfig().then(setAuthCfg).catch(() => setAuthCfg(null));
+    fetchMe().then(setUser).catch(() => setUser(null));
+    const q = new URLSearchParams(location.search);
+    if (q.has('verified') || q.has('verify_error')) {
+      if (q.has('verified')) { flash('Email confirmed. You are signed in.'); fetchMe().then(setUser).catch(() => {}); }
+      else setError('That confirmation link is invalid or has expired. Sign in to get a new one.');
+      q.delete('verified'); q.delete('verify_error');
+      history.replaceState(null, '', location.pathname + (q.toString() ? `?${q}` : ''));
+    }
+  }, []);
+
+  // Signed in: save annotations to the account and restore what it already has (also uploads anything drawn before signing up).
+  useEffect(() => {
+    if (!user) { stopSync(); return; }
+    startSync()
+      .then(r => { setReloadKey(k => k + 1); if (r.pulled) flash(`Restored your annotations on ${r.pulled} slide${r.pulled === 1 ? '' : 's'}`); })
+      .catch(() => setError('Could not sync your annotations. They are still saved in this browser.'));
+  }, [user?.id]);
+
+  // Anonymous users: say once, on their first annotation, that nothing is saved beyond this browser.
+  useEffect(() => onAnnotationsSaved(() => {
+    if (user) return;
+    try { if (sessionStorage.getItem('pathy:local-hint') === '1') return; sessionStorage.setItem('pathy:local-hint', '1'); } catch { /* ignore */ }
+    flash(DEMO ? 'Annotations stay in this browser tab only.' : 'Annotations are saved only in this browser. Create a free account to keep them.');
+  }), [user]);
 
   const refresh = () => listSlides().then(setSlides).catch(e => setError(e.message));
   useEffect(() => {
@@ -39,14 +76,14 @@ export default function App() {
     open(path);
   };
 
-  // Session storage vanishes with the tab: warn if there is unsaved work.
+  // Anonymous annotations vanish with the tab: warn before leaving. Signed-in users have them saved in their account.
   useEffect(() => {
     const h = (e: BeforeUnloadEvent) => {
-      if (allSlidesWithAnnotations().length) { e.preventDefault(); e.returnValue = ''; }
+      if (!user && allSlidesWithAnnotations().length) { e.preventDefault(); e.returnValue = ''; }
     };
     window.addEventListener('beforeunload', h);
     return () => window.removeEventListener('beforeunload', h);
-  }, []);
+  }, [user]);
 
   const open = async (path: string) => {
     setError(''); setLoading(true);
@@ -71,6 +108,17 @@ export default function App() {
       <header>
         <img className="logo" src="/logo.png" alt="Pathy logo" />
         <span className="logo-text" role="img" aria-label="Pathy" />
+        {!DEMO && authCfg && (user ? (
+          <span className="user-chip" title={user.email}>
+            <span className="avatar">{(user.name || user.email)[0].toUpperCase()}</span>
+            <button className="link" onClick={async () => { await logout().catch(() => {}); signOutCleanup(); setUser(null); setReloadKey(k => k + 1); flash('Signed out'); }}>Sign out</button>
+          </span>
+        ) : (
+          <button className="signin" onClick={() => setAuthModal({})}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>
+            Sign in
+          </button>
+        ))}
         {DEMO && <span className="muted">DEMO MODE · static sample images, no backend</span>}
         <span className="spacer" />
         <button className="primary" onClick={share} title="Copy a link that opens this session, with your annotations, for anyone">
@@ -80,14 +128,18 @@ export default function App() {
         <ThemeToggle theme={theme} onChange={setTheme} />
       </header>
       <div className="body">
-        <aside>
-          {(['public', 'mine'] as const).map(scope => {
+        <aside className="sidebar">
+          <div className="sidebar-scroll">
+          {(['mine', 'public'] as const).map(scope => {
+            if (scope === 'mine' && DEMO) return null; // no backend, no personal slides
             const list = slides.filter(x => (x.scope ?? 'public') === scope);
-            if (scope === 'mine' && list.length === 0) return null;
             return (
               <div key={scope}>
-                <h3>{scope === 'public' ? 'Public slides' : 'Your uploads'}</h3>
-                {list.length === 0 && !error && <p className="muted">No slides found.</p>}
+                <div className="section-head">
+                  <h3>{scope === 'public' ? 'Public slides' : 'Your slides'}</h3>
+                </div>
+                {list.length === 0 && scope === 'mine' && <p className="muted empty-note">Slides you upload show up here. They are private to this session and deleted after 24 hours.</p>}
+                {list.length === 0 && scope === 'public' && !error && <p className="muted">No slides found.</p>}
                 <ul>
                   {list.map(s => (
                     <li key={s.path}>
@@ -104,19 +156,43 @@ export default function App() {
             <h3>Current slide</h3>
             <p className="muted">{count} annotation{count === 1 ? '' : 's'} on this slide</p>
             <p className="muted">{current.width.toLocaleString()} × {current.height.toLocaleString()} px</p>
+            {user ? (
+              <div className="save-note ok">
+                <strong>Saved to your account</strong>
+                <span>{sync === 'saving' ? 'Saving…' : sync === 'error' ? 'Could not save just now. Your latest changes are kept in this browser and retried on the next edit.' : 'Your annotations follow you to any device.'}</span>
+              </div>
+            ) : (
+              <div className="save-note warn">
+                <strong>Saved only in this browser</strong>
+                <span>{DEMO ? 'Demo mode: annotations stay in this browser tab and disappear when you close it.'
+                  : 'Your annotations stay in this browser tab and disappear when you close it. Sign up to keep them in your account.'}</span>
+                {!DEMO && authCfg && <button className="primary" onClick={() => setAuthModal({ reason: 'Create a free account to keep your annotations and use the AI.' })}>Sign up free</button>}
+              </div>
+            )}
           </>)}
+          </div>
+          {!DEMO && (
+            <div className="sidebar-upload">
+              <UploadBox onUploaded={onUploaded} onError={setError} />
+            </div>
+          )}
         </aside>
         <main>
           {error && <div className="error" onClick={() => setError('')}>{error} <small>(click to dismiss)</small></div>}
           {loading && <div className="overlay">Opening slide…</div>}
           {current
-            ? <Viewer slide={current} onCount={setCount} reloadKey={reloadKey} />
+            ? <Viewer slide={current} onCount={setCount} reloadKey={reloadKey} user={user} ai={DEMO ? null : authCfg}
+                    onRequireAuth={reason => setAuthModal({ reason })} onSignedOut={() => setUser(null)} />
             : <div className="empty">
                 <UploadBox large onUploaded={onUploaded} onError={setError} />
                 <p className="muted">…or pick a public slide from the list.</p>
               </div>}
         </main>
       </div>
+      {authModal && (
+        <AuthModal reason={authModal.reason} config={authCfg} onClose={() => setAuthModal(null)}
+                   onAuthed={u => { setUser(u); setAuthModal(null); flash(`Signed in as ${u.email}`); }} />
+      )}
       {toast && <div className="toast" role="status">{toast}</div>}
       <footer>
         <span>© {new Date().getFullYear()} Pathy. All rights reserved.</span>

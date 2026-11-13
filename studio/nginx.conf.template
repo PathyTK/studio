@@ -16,6 +16,37 @@ server {
         proxy_set_header Host ${RSLIDES_HOST};
     }
 
+    # Accounts + AI go to the pathy-api service (same origin, so the session cookie just works).
+    location /api/annotations {
+        client_max_body_size 4m;
+        proxy_pass ${API_URL};
+        proxy_http_version 1.1;
+        proxy_ssl_server_name on;
+        proxy_set_header Host ${API_HOST};
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location /api/auth/ {
+        proxy_pass ${API_URL};
+        proxy_http_version 1.1;
+        proxy_ssl_server_name on;
+        proxy_set_header Host ${API_HOST};
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    # AI answers stream token by token: no buffering, generous timeout, room for the screenshots in the request.
+    location /api/ai/ {
+        client_max_body_size 16m;
+        proxy_pass ${API_URL};
+        proxy_http_version 1.1;
+        proxy_ssl_server_name on;
+        proxy_set_header Host ${API_HOST};
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_read_timeout 300s;   # a local CPU model can take minutes to start answering
+    }
+
     # Same-origin proxy to rslides: no CORS, no mixed content.
     location /api/ {
         proxy_pass ${RSLIDES_URL};

@@ -7,12 +7,10 @@ interface Props {
   large?: boolean;
 }
 
-export default function UploadBox({ onUploaded, onError, large }: Props) {
-  const input = useRef<HTMLInputElement>(null);
-  const [drag, setDrag] = useState(false);
+/** Shared upload logic: validates the file, uploads it, reports progress. */
+function useSlideUpload(onUploaded: (path: string) => void, onError: (msg: string) => void) {
   const [progress, setProgress] = useState<number | null>(null);
   const [name, setName] = useState('');
-
   const send = async (file?: File) => {
     if (!file || progress !== null) return;
     const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
@@ -23,6 +21,13 @@ export default function UploadBox({ onUploaded, onError, large }: Props) {
     catch (e) { onError((e as Error).message); }
     finally { setProgress(null); }
   };
+  return { send, progress, name };
+}
+
+export default function UploadBox({ onUploaded, onError, large }: Props) {
+  const input = useRef<HTMLInputElement>(null);
+  const [drag, setDrag] = useState(false);
+  const { send, progress, name } = useSlideUpload(onUploaded, onError);
 
   if (DEMO) {
     return <div className={`upload disabled ${large ? 'large' : ''}`}><strong>Upload a slide</strong><span>Not available in demo mode</span></div>;

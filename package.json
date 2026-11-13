@@ -1,0 +1,16 @@
+{
+  "name": "pathy-studio-monorepo",
+  "private": true,
+  "type": "module",
+  "description": "Root package for the Vercel Functions in api/. Keep these versions in sync with server/package.json.",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "google-auth-library": "^9.15.1",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.6.3"
+  }
+}

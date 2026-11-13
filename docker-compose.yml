@@ -1,4 +1,4 @@
-# docker compose up --build  ->  http://localhost:3000
+# cp .env.example .env   (once), then:  docker compose up --build  ->  http://localhost:3000
 services:
   rslides:
     build: ./repos/rslides
@@ -10,12 +10,46 @@ services:
       - ./slides/public:/slides/public:ro   # public slides: drop .svs files here, everyone sees them
       - uploads:/slides/sessions            # anonymous uploads
     expose: ["8080"]
+  postgres:                  # LOCAL development database. In production the API uses your hosted Postgres (DATABASE_URL).
+    image: postgres:16
+    environment:
+      POSTGRES_USER: pathy
+      POSTGRES_PASSWORD: pathy   # local-only credential; never reachable from outside the compose network
+      POSTGRES_DB: pathy
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pathy -d pathy"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    expose: ["5432"]
+  api:                       # accounts, saved annotations and the AI chat; secrets come from .env
+    build: ./server          # the same handler runs as a serverless function on Vercel (../api)
+    env_file: .env
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: "8080"
+      DATABASE_URL: ${DATABASE_URL:-postgres://pathy:pathy@postgres:5432/pathy}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose: ["8080"]
+  ollama:                    # local LLM so the AI chat can be tested with no API key (opt-in profile)
+    image: ollama/ollama:latest
+    profiles: ["llm"]        # docker-compose --profile llm up -d ollama
+    volumes:
+      - ollama:/root/.ollama # downloaded models live here
+    expose: ["11434"]
   studio:
     build: ./studio
     environment:
       PORT: "8080"
-      RSLIDES_URL: http://rslides:8080
+      RSLIDES_URL: ${RSLIDES_URL:-http://rslides:8080}   # set in .env to use a remote rslides (e.g. Cloud Run) instead of the local container
+      API_URL: http://api:8080
     ports: ["3000:8080"]
-    depends_on: [rslides]
+    depends_on: [rslides, api]
 volumes:
   uploads:
+  pgdata:
+  ollama:

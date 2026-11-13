@@ -5,12 +5,19 @@ import Annotorious from '@recogito/annotorious-openseadragon';
 import '@recogito/annotorious-openseadragon/dist/annotorious.min.css';
 import { SlideMetadata, tileUrl } from './api';
 import { Annotation, loadAnnotations, saveAnnotations } from './storage';
+import AiPanel from './AiPanel';
+import type { AuthConfig, ChatContext, User } from './auth';
+import { annotationNote, captureAnnotation, captureView } from './ai-context';
 
 export type Tool = 'rect' | 'polygon' | 'move';
 interface Props {
   slide: SlideMetadata;
   onCount: (n: number) => void;
-  reloadKey: number; // bump to re-read annotations from storage (after import)
+  reloadKey: number; // bump to re-read annotations from storage (after a share link loads)
+  user: User | null;
+  ai: AuthConfig | null;          // null when the backend is unavailable (demo mode)
+  onRequireAuth: (reason: string) => void;
+  onSignedOut: () => void;
 }
 
 const icon = (d: React.ReactNode) => (
@@ -31,7 +38,10 @@ class PathyTileSource extends (OpenSeadragon as any).TileSource {
   }
 }
 
-export default function Viewer({ slide, onCount, reloadKey }: Props) {
+export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireAuth, onSignedOut }: Props) {
+  const [aiOpen, setAiOpen] = useState(false);
+  const [selected, setSelected] = useState<any>(null);
+  const zoomLabel = useRef('');
   const [tool, setTool] = useState<Tool>('move');
   const [count, setCount] = useState(0);
   const el = useRef<HTMLDivElement>(null);
@@ -45,6 +55,7 @@ export default function Viewer({ slide, onCount, reloadKey }: Props) {
       element: el.current!,
       prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@4.1.1/build/openseadragon/images/',
       tileSources: (slide.dzi ?? new PathyTileSource(slide)) as any,
+      crossOriginPolicy: 'Anonymous', // tiles may come from another origin (rslides on Cloud Run); without CORS the AI screenshot canvas would be unreadable
       showNavigationControl: false, // replaced by our own controls below (same style as the drawing toolbar)
       showNavigator: true,
       autoHideControls: false, // keep the overview map visible (default fades it out when the mouse is idle)
@@ -71,7 +82,9 @@ export default function Viewer({ slide, onCount, reloadKey }: Props) {
     });
     a.on('createAnnotation', persist);
     a.on('updateAnnotation', persist);
-    a.on('deleteAnnotation', persist);
+    a.on('deleteAnnotation', (x: any) => { setSelected(null); persist(); void x; });
+    a.on('selectAnnotation', (x: any) => setSelected(x));
+    a.on('cancelSelected', () => setSelected(null));
 
     // Effective magnification = base objective mag * current zoom relative to level 0
     const base = slide.levels_metadata[0]?.mag || 40; // demo images have no magnification: assume 40×
@@ -80,7 +93,8 @@ export default function Viewer({ slide, onCount, reloadKey }: Props) {
       const mag = base * imgZoom;
       const mpp = slide.levels_metadata[0]?.micro_meter_per_pixel;
       const bar = mpp ? ` · ${(100 / imgZoom * mpp).toFixed(0)} µm ≈ 100 px` : '';
-      setZoomInfo(`${mag.toFixed(mag < 10 ? 1 : 0)}×${bar}`);
+      zoomLabel.current = `${mag.toFixed(mag < 10 ? 1 : 0)}×`;
+      setZoomInfo(`${zoomLabel.current}${bar}`);
     };
     viewer.addHandler('zoom', update);
     viewer.addHandler('open', update);
@@ -101,6 +115,8 @@ export default function Viewer({ slide, onCount, reloadKey }: Props) {
   useEffect(() => {
     const a = anno.current;
     if (!a) return;
+    // Leave any open editor/selection first: disabling drawing while a shape is selected makes Annotorious throw.
+    try { a.cancelSelected(); } catch { /* nothing selected */ }
     if (tool === 'move') a.setDrawingEnabled(false);
     else { a.setDrawingTool(tool); a.setDrawingEnabled(true); }
   }, [tool, slide]);
@@ -110,6 +126,20 @@ export default function Viewer({ slide, onCount, reloadKey }: Props) {
   const fullscreen = () => {
     const r = root.current; if (!r) return;
     if (document.fullscreenElement) document.exitFullscreen(); else r.requestFullscreen?.();
+  };
+
+  // What the AI gets with each message: slide name, magnification, a screenshot of the view and the selected annotation.
+  const getAiContext = (): ChatContext => {
+    const v = osd.current;
+    const ctx: ChatContext = { slideName: slide.path.split('/').pop(), magnification: zoomLabel.current || undefined };
+    if (!v) return ctx;
+    ctx.viewImage = captureView(v);
+    if (selected) { const c = captureAnnotation(v, selected, slide); if (c) ctx.annotation = c; }
+    return ctx;
+  };
+  const toggleAi = () => {
+    if (!user) return onRequireAuth('Create a free account to chat with the AI about your slides.');
+    setAiOpen(o => !o);
   };
 
   // Shortcuts: V pan, R rectangle, P polygon (ignored while typing in the annotation editor)
@@ -148,6 +178,16 @@ export default function Viewer({ slide, onCount, reloadKey }: Props) {
         </div>
       )}
       <div className="zoom-badge">{zoomInfo}</div>
+      {ai?.aiEnabled && (
+        <button className={`ai-launch primary ${aiOpen ? 'on' : ''}`} onClick={toggleAi} title={user ? 'Chat with the AI about this slide' : 'Sign in to use the AI'}>
+          {icon(<><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /><path d="M19 3v4M17 5h4M5 17v4M3 19h4" /></>)}
+          Ask AI
+        </button>
+      )}
+      {aiOpen && user && ai && (
+        <AiPanel slideName={slide.path.split('/').pop() ?? slide.path} hasSelection={!!selected} badge={ai.aiMock ? 'mock' : ai.aiProvider === 'openai-compatible' ? ai.aiModel : null} dailyLimit={ai.aiDailyLimit}
+                 getContext={getAiContext} onClose={() => setAiOpen(false)} onSignedOut={() => { setAiOpen(false); onSignedOut(); }} />
+      )}
     </div>
   );
 }
