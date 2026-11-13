@@ -1,0 +1,21 @@
+# docker compose up --build  ->  http://localhost:3000
+services:
+  rslides:
+    build: ./repos/rslides
+    environment:
+      SLIDE_DIR: /slides
+      MAX_UPLOAD_BYTES: "2147483648"  # 2 GB per uploaded slide
+      SESSION_TTL_HOURS: "24"         # uploads are deleted after this
+    volumes:
+      - ./slides/public:/slides/public:ro   # public slides: drop .svs files here, everyone sees them
+      - uploads:/slides/sessions            # anonymous uploads
+    expose: ["8080"]
+  studio:
+    build: ./studio
+    environment:
+      PORT: "8080"
+      RSLIDES_URL: http://rslides:8080
+    ports: ["3000:8080"]
+    depends_on: [rslides]
+volumes:
+  uploads:

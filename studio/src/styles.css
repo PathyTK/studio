@@ -1,0 +1,87 @@
+/* Built on pathy-web's tokens.css (colors, light/dark) and base.css. */
+:root { --accent: #4282c9; }
+html, body, #root { height: 100%; margin: 0; }
+body { font-size: 14px; }
+.app { display: flex; flex-direction: column; height: 100%; }
+header { display: flex; gap: 20px; align-items: center; padding: 0 32px; height: 80px; background: var(--header-bg); border-bottom: 1px solid var(--header-divider); }
+header a { color: var(--accent); }
+.logo { height: 40px; width: auto; object-fit: contain; }
+/* logo-text.svg is a single-colour glyph: paint it with --brand-text so it works in dark mode */
+.logo-text { display: inline-block; width: 100px; height: 16.5px; background: var(--brand-text);
+  -webkit-mask: url(/logo-text.svg) no-repeat center / contain; mask: url(/logo-text.svg) no-repeat center / contain; }
+.title { color: var(--text-muted); font-weight: 400; }
+.spacer { flex: 1; }
+.muted { color: var(--text-muted); font-size: 12px; }
+.body { flex: 1; display: flex; min-height: 0; }
+aside { width: 240px; padding: 12px; background: var(--sidebar-bg); border-right: 1px solid var(--filter-sidebar-border); box-shadow: var(--sidebar-shadow); overflow: auto; color: var(--sidebar-text); }
+aside h3 { margin: 12px 0 6px; font-size: 12px; text-transform: uppercase; color: var(--text-muted); }
+ul { list-style: none; margin: 0; padding: 0; }
+button { background: var(--sidebar-icon-bg); color: var(--text-strong); border: 1px solid var(--border-strong); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+button:hover { border-color: var(--accent); background: var(--sidebar-hover-bg); }
+button.active { background: var(--sidebar-active-bg); border-color: var(--accent); color: var(--sidebar-active); font-weight: 700; }
+aside li button { width: 100%; text-align: left; margin-bottom: 4px; display: flex; justify-content: space-between; gap: 8px; }
+aside small { opacity: .7; }
+.tools { display: flex; flex-direction: column; gap: 4px; }
+main { flex: 1; position: relative; min-width: 0; }
+.viewer { position: absolute; inset: 0; }
+/* OpenSeadragon forces position:relative on its element, so size with width/height, not inset */
+.osd { width: 100%; height: 100%; }
+.osd { background: var(--wsi-viewer-bg); }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-muted); pointer-events: none; }
+.error { position: absolute; z-index: 5; top: 12px; left: 12px; right: 12px; padding: 10px; background: var(--surface); color: var(--error-text); border: 1px solid var(--error-text); border-radius: 8px; }
+.zoom-badge { position: absolute; left: 12px; bottom: 12px; padding: 4px 10px; background: var(--surface); color: var(--text-strong); border: 1px solid var(--border-strong); box-shadow: var(--theme-toggle-shadow); border-radius: 8px; font-variant-numeric: tabular-nums; }
+
+.theme-toggle { display: flex; align-items: center; gap: 4px; height: 32px; padding: 1px; border-radius: 999px; background: var(--toggle-track-bg); border: 1px solid var(--toggle-border-bg); box-shadow: var(--theme-toggle-shadow); }
+.theme-toggle button { display: grid; place-items: center; height: 100%; width: 34px; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--theme-toggle-option); }
+.theme-toggle button:hover { background: var(--sidebar-hover-bg); }
+.theme-toggle button.on, .theme-toggle button.on:hover { color: #fff; background: var(--accent-gradient); box-shadow: 0 10px 25px rgba(0,0,0,.25); }
+
+footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 32px; background: var(--header-bg); border-top: 1px solid var(--header-divider); color: var(--text-muted); font-size: 12px; }
+footer a { color: var(--accent); }
+
+/* Upload area: deliberately loud */
+.upload { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 16px 12px; margin-bottom: 8px;
+  border: 2px dashed var(--accent); border-radius: 12px; background: var(--sidebar-active-bg); color: var(--text-strong); transition: background .15s, transform .15s; }
+.upload.drag { background: var(--sidebar-active-bg); transform: scale(1.02); border-style: solid; }
+.upload svg { color: var(--accent); }
+.upload strong { font-size: 15px; }
+.upload span, .upload small { color: var(--text-muted); font-size: 12px; }
+.upload .file { color: var(--text-strong); font-weight: 700; word-break: break-all; }
+.upload.disabled { opacity: .6; border-color: var(--border-strong); background: transparent; }
+.upload.large { width: min(480px, 90%); padding: 40px 24px; gap: 10px; }
+.upload.large svg { width: 56px; height: 56px; }
+.upload.large strong { font-size: 22px; }
+.upload.large span, .upload.large small { font-size: 14px; }
+button.primary { background: var(--accent-gradient); color: #fff; border: 0; font-weight: 700; padding: 8px 18px; }
+button.primary:hover { filter: brightness(1.08); background: var(--accent-gradient); }
+.bar { width: 100%; height: 8px; border-radius: 999px; background: var(--toggle-track-bg); overflow: hidden; }
+.bar div { height: 100%; background: var(--accent-gradient); transition: width .2s; }
+.empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; overflow: auto; }
+.error { cursor: pointer; }
+
+/* Drawing tools live inside the viewer */
+.draw-toolbar { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; align-items: center; gap: 4px; padding: 4px;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 999px; box-shadow: var(--theme-toggle-shadow); }
+.draw-toolbar button { display: flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; padding: 6px 12px; background: transparent; }
+.draw-toolbar button:hover { background: var(--sidebar-hover-bg); }
+.draw-toolbar button.active { background: var(--accent-gradient); color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.25); }
+.draw-count { min-width: 24px; margin: 0 8px 0 4px; padding: 2px 8px; border-radius: 999px; background: var(--toggle-track-bg); color: var(--text-muted); font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) { .draw-toolbar button span { display: none; } }
+
+/* View controls (replace OpenSeadragon's default image buttons) */
+.view-controls { position: absolute; top: 12px; left: 12px; z-index: 10; display: flex; flex-direction: column; gap: 4px; padding: 4px;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 999px; box-shadow: var(--theme-toggle-shadow); }
+.view-controls button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 999px; background: transparent; }
+.view-controls button:hover { background: var(--sidebar-hover-bg); }
+.view-controls button:active { background: var(--accent-gradient); color: #fff; }
+
+/* Overview map */
+.osd .navigator { border: 1px solid var(--border-strong) !important; border-radius: 12px; overflow: hidden; background: var(--surface) !important; box-shadow: var(--theme-toggle-shadow); margin: 12px !important; }
+.osd .displayregion { border: 2px solid var(--accent) !important; border-radius: 2px; }
+
+.draw-hint { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 10; padding: 4px 12px; border-radius: 999px; font-size: 12px; pointer-events: none;
+  background: var(--surface); color: var(--text-muted); border: 1px solid var(--border-strong); box-shadow: var(--theme-toggle-shadow); }
+
+button.primary svg { vertical-align: -3px; margin-right: 6px; }
+.toast { position: fixed; bottom: 56px; left: 50%; transform: translateX(-50%); z-index: 50; padding: 10px 18px; border-radius: 999px; background: var(--surface); color: var(--text-strong);
+  border: 1px solid var(--border-strong); box-shadow: var(--theme-toggle-shadow); }

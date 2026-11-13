@@ -1,0 +1,35 @@
+server {
+    listen ${PORT};
+    root /usr/share/nginx/html;
+    index index.html;
+    gzip on;
+
+    # Slide uploads: stream straight to rslides, no size cap here (rslides enforces MAX_UPLOAD_BYTES).
+    location /api/upload/ {
+        client_max_body_size 0;
+        proxy_request_buffering off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_pass ${RSLIDES_URL};
+        proxy_http_version 1.1;
+        proxy_ssl_server_name on;
+        proxy_set_header Host ${RSLIDES_HOST};
+    }
+
+    # Same-origin proxy to rslides: no CORS, no mixed content.
+    location /api/ {
+        proxy_pass ${RSLIDES_URL};
+        proxy_http_version 1.1;
+        proxy_ssl_server_name on;
+        proxy_set_header Host ${RSLIDES_HOST};
+        proxy_buffering on;
+    }
+
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    location / {
+        try_files $uri /index.html;
+    }
+}

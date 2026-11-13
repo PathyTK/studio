@@ -1,0 +1,2 @@
+# Sourced by the nginx entrypoint before envsubst: derive the Host header for the upstream.
+export RSLIDES_HOST=$(echo "$RSLIDES_URL" | sed -E 's#^[a-z]+://([^/]+).*#\1#')

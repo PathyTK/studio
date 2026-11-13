@@ -1,0 +1,13 @@
+# cloned upstream repos live in their own git repos (rslides is on branch pathy-3.0)
+repos/
+node_modules/
+dist/
+.DS_Store
+# slide files are large and may be patient-derived: never commit them
+slides/public/*
+!slides/public/.gitkeep
+slides/sessions/
+
+# internal planning notes (kept local, not for the public repo)
+questions.md
+task.md
