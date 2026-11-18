@@ -19,7 +19,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 button { background: var(--sidebar-icon-bg); color: var(--text-strong); border: 1px solid var(--border-strong); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
 button:hover { border-color: var(--accent); background: var(--sidebar-hover-bg); }
 button.active { background: var(--sidebar-active-bg); border-color: var(--accent); color: var(--sidebar-active); font-weight: 700; }
-aside li button { width: 100%; text-align: left; margin-bottom: 4px; display: flex; justify-content: space-between; gap: 8px; }
+aside li button { width: 100%; text-align: left; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 aside small { opacity: .7; }
 .tools { display: flex; flex-direction: column; gap: 4px; }
 main { flex: 1; position: relative; min-width: 0; }
@@ -174,3 +174,29 @@ aside.sidebar { display: flex; flex-direction: column; padding: 0; overflow: hid
 :root.theme-dark .save-note.warn { background: #3d3210; color: #ffd978; border-color: #7a5b00; }
 .save-note.ok { background: var(--sidebar-active-bg); color: var(--text-strong); border-color: var(--border-strong); }
 .save-note button { align-self: flex-start; margin-top: 4px; padding: 5px 12px; font-size: 12px; border-radius: 999px; }
+
+/* Slide names: one line, ellipsis, full name in the tooltip */
+.slide-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+aside li button small { flex: none; color: var(--text-muted); font-weight: 400; }
+
+/* Current slide is pinned above the scrolling lists, so it is always visible */
+.sidebar-current { flex: none; max-height: 45%; overflow: auto; padding: 4px 12px 12px; border-bottom: 1px solid var(--filter-sidebar-border); background: var(--sidebar-bg); }
+.sidebar-current h3 { margin-top: 8px; }
+.current-name { margin: 0 0 2px; font-weight: 700; color: var(--sidebar-active); overflow-wrap: anywhere; line-height: 1.3; }
+
+/* Upload collapses to a single icon button while a slide is open */
+.sidebar-upload.compact { padding: 6px 12px; display: flex; justify-content: flex-end; }
+.upload-compact { display: flex; align-items: center; gap: 8px; }
+.upload-compact .bar { width: 60px; }
+.upload-compact.drag .icon-btn { border-color: var(--accent); background: var(--sidebar-active-bg); }
+.icon-btn { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 10px; color: var(--accent); }
+.icon-btn:disabled { opacity: .6; cursor: progress; }
+
+/* Ruler overlay + real-world scale bar */
+.ruler-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; overflow: hidden; }
+.ruler line { stroke: #ffd400; stroke-width: 2; filter: drop-shadow(0 0 2px rgba(0,0,0,.8)); }
+.ruler-label { pointer-events: auto; cursor: pointer; }
+.ruler-label rect { fill: rgba(20,20,20,.85); stroke: #ffd400; }
+.ruler-label text { fill: #fff; font-size: 12px; font-variant-numeric: tabular-nums; }
+.scale-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: 4px; font-size: 12px; }
+.scale-bar div { height: 6px; border: 2px solid var(--text-strong); border-top: 0; box-sizing: content-box; }

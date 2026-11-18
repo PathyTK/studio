@@ -13,6 +13,9 @@ import { AuthConfig, User, fetchConfig, fetchMe, logout } from './auth';
 // Comma-separated recipients; override at build time with VITE_CONTACT_EMAIL.
 const CONTACT = (import.meta.env.VITE_CONTACT_EMAIL as string | undefined) || 'aws@pathy.ai,oussama@pathy.ai';
 
+/** Readable slide label: drops the file extension and tidies separators; the full name stays in the tooltip. */
+const shortName = (name: string) => name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim() || name;
+
 export default function App() {
   const [slides, setSlides] = useState<SlideEntry[]>([]);
   const [current, setCurrent] = useState<SlideMetadata | null>(null);
@@ -129,6 +132,24 @@ export default function App() {
       </header>
       <div className="body">
         <aside className="sidebar">
+          {current && (<div className="sidebar-current">
+            <h3>Current slide</h3>
+            <p className="current-name" title={current.path.split('/').pop()}>{shortName(current.path.split('/').pop() ?? '')}</p>
+            <p className="muted">{current.width.toLocaleString()} × {current.height.toLocaleString()} px · {count} annotation{count === 1 ? '' : 's'}</p>
+            {user ? (
+              <div className="save-note ok">
+                <strong>Saved to your account</strong>
+                <span>{sync === 'saving' ? 'Saving…' : sync === 'error' ? 'Could not save just now. Your latest changes are kept in this browser and retried on the next edit.' : 'Your annotations follow you to any device.'}</span>
+              </div>
+            ) : (
+              <div className="save-note warn">
+                <strong>Saved only in this browser</strong>
+                <span>{DEMO ? 'Demo mode: annotations stay in this browser tab and disappear when you close it.'
+                  : 'Your annotations stay in this browser tab and disappear when you close it. Sign up to keep them in your account.'}</span>
+                {!DEMO && authCfg && <button className="primary" onClick={() => setAuthModal({ reason: 'Create a free account to keep your annotations and use the AI.' })}>Sign up free</button>}
+              </div>
+            )}
+          </div>)}
           <div className="sidebar-scroll">
           {(['mine', 'public'] as const).map(scope => {
             if (scope === 'mine' && DEMO) return null; // no backend, no personal slides
@@ -144,7 +165,7 @@ export default function App() {
                   {list.map(s => (
                     <li key={s.path}>
                       <button className={current?.path === s.path ? 'active' : ''} onClick={() => open(s.path)}>
-                        {s.name}{s.size > 0 && <small>{(s.size / 1e6).toFixed(1)} MB</small>}
+                        <span className="slide-name" title={s.name}>{shortName(s.name)}</span>{s.size > 0 && <small>{(s.size / 1e6).toFixed(1)} MB</small>}
                       </button>
                     </li>
                   ))}
@@ -152,28 +173,10 @@ export default function App() {
               </div>
             );
           })}
-          {current && (<>
-            <h3>Current slide</h3>
-            <p className="muted">{count} annotation{count === 1 ? '' : 's'} on this slide</p>
-            <p className="muted">{current.width.toLocaleString()} × {current.height.toLocaleString()} px</p>
-            {user ? (
-              <div className="save-note ok">
-                <strong>Saved to your account</strong>
-                <span>{sync === 'saving' ? 'Saving…' : sync === 'error' ? 'Could not save just now. Your latest changes are kept in this browser and retried on the next edit.' : 'Your annotations follow you to any device.'}</span>
-              </div>
-            ) : (
-              <div className="save-note warn">
-                <strong>Saved only in this browser</strong>
-                <span>{DEMO ? 'Demo mode: annotations stay in this browser tab and disappear when you close it.'
-                  : 'Your annotations stay in this browser tab and disappear when you close it. Sign up to keep them in your account.'}</span>
-                {!DEMO && authCfg && <button className="primary" onClick={() => setAuthModal({ reason: 'Create a free account to keep your annotations and use the AI.' })}>Sign up free</button>}
-              </div>
-            )}
-          </>)}
           </div>
           {!DEMO && (
-            <div className="sidebar-upload">
-              <UploadBox onUploaded={onUploaded} onError={setError} />
+            <div className={`sidebar-upload ${current ? 'compact' : ''}`}>
+              <UploadBox compact={!!current} onUploaded={onUploaded} onError={setError} />
             </div>
           )}
         </aside>

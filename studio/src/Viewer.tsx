@@ -9,7 +9,14 @@ import AiPanel from './AiPanel';
 import type { AuthConfig, ChatContext, User } from './auth';
 import { annotationNote, captureAnnotation, captureView } from './ai-context';
 
-export type Tool = 'rect' | 'polygon' | 'move';
+export type Tool = 'rect' | 'polygon' | 'move' | 'ruler';
+type Pt = { x: number; y: number };            // image pixels
+type Ruler = { a: Pt; b: Pt };
+
+/** Length in µm → "480 µm" / "1.25 mm" */
+const fmtLen = (um: number) => um >= 1000 ? `${(um / 1000).toFixed(um >= 10000 ? 1 : 2)} mm` : `${um >= 100 ? um.toFixed(0) : um.toFixed(1)} µm`;
+/** Largest 1-2-5 × 10ⁿ value that is <= v */
+const niceLen = (v: number) => { const p = 10 ** Math.floor(Math.log10(v)); const m = v / p; return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * p; };
 interface Props {
   slide: SlideMetadata;
   onCount: (n: number) => void;
@@ -27,6 +34,7 @@ const TOOLS: { id: Tool; label: string; key: string; icon: React.ReactNode }[] =
   { id: 'move', label: 'Pan', key: 'V', icon: icon(<><path d="M18 11V6a2 2 0 0 0-4 0v5" /><path d="M14 10V4a2 2 0 0 0-4 0v6" /><path d="M10 10.5V6a2 2 0 0 0-4 0v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-5.9-2.4L3.4 16a2 2 0 0 1 3.2-2.4L8 15" /></>) },
   { id: 'rect', label: 'Rectangle', key: 'R', icon: icon(<rect x="3" y="5" width="18" height="14" rx="1" />) },
   { id: 'polygon', label: 'Polygon', key: 'P', icon: icon(<path d="m12 2 9.5 7-3.6 11.2H6.1L2.5 9z" />) },
+  { id: 'ruler', label: 'Ruler', key: 'M', icon: icon(<><path d="M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4z" /><path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2" /></>) },
 ];
 
 class PathyTileSource extends (OpenSeadragon as any).TileSource {
@@ -49,6 +57,12 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
   const anno = useRef<any>(null);
   const osd = useRef<OpenSeadragon.Viewer | null>(null);
   const [zoomInfo, setZoomInfo] = useState('');
+  const [scaleBar, setScaleBar] = useState<{ px: number; label: string } | null>(null);
+  const [rulers, setRulers] = useState<Ruler[]>([]);
+  const [draft, setDraft] = useState<Ruler | null>(null);
+  const [, setTick] = useState(0); // re-render the ruler overlay while panning/zooming
+  const toolRef = useRef<Tool>('move');
+  const mpp = slide.levels_metadata[0]?.micro_meter_per_pixel;
 
   useEffect(() => {
     const viewer = OpenSeadragon({
@@ -91,16 +105,36 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
     const update = () => {
       const imgZoom = viewer.viewport.viewportToImageZoom(viewer.viewport.getZoom(true));
       const mag = base * imgZoom;
-      const mpp = slide.levels_metadata[0]?.micro_meter_per_pixel;
-      const bar = mpp ? ` · ${(100 / imgZoom * mpp).toFixed(0)} µm ≈ 100 px` : '';
       zoomLabel.current = `${mag.toFixed(mag < 10 ? 1 : 0)}×`;
-      setZoomInfo(`${zoomLabel.current}${bar}`);
+      setZoomInfo(zoomLabel.current);
+      // Scale bar: a round real-world length drawn at roughly 60-150 screen px
+      const unit = mpp ? mpp / imgZoom : 1 / imgZoom;   // µm (or image px) per screen px
+      const len = niceLen(unit * 120);
+      setScaleBar({ px: len / unit, label: mpp ? fmtLen(len) : `${len.toLocaleString()} px` });
     };
     viewer.addHandler('zoom', update);
     viewer.addHandler('open', update);
+    viewer.addHandler('animation', () => setTick(t => t + 1));
+
+    // Ruler tool: drag to measure. Wheel zoom stays live; only the drag-to-pan is suppressed.
+    const toImg = (pos: any): Pt => { const q = viewer.viewport.viewerElementToImageCoordinates(pos); return { x: q.x, y: q.y }; };
+    let from: Pt | null = null;
+    viewer.addHandler('canvas-press', (e: any) => { if (toolRef.current === 'ruler') from = toImg(e.position); });
+    viewer.addHandler('canvas-drag', (e: any) => {
+      if (toolRef.current !== 'ruler' || !from) return;
+      e.preventDefaultAction = true;
+      setDraft({ a: from, b: toImg(e.position) });
+    });
+    viewer.addHandler('canvas-release', (e: any) => {
+      if (toolRef.current !== 'ruler' || !from) return;
+      const to = toImg(e.position), f = from; from = null; setDraft(null);
+      if (Math.hypot(to.x - f.x, to.y - f.y) * viewer.viewport.viewportToImageZoom(viewer.viewport.getZoom(true)) > 4) setRulers(r => [...r, { a: f, b: to }]);
+    });
 
     return () => { a.destroy(); viewer.destroy(); };
   }, [slide]);
+
+  useEffect(() => { setRulers([]); setDraft(null); }, [slide]);
 
   // (re)load stored annotations on slide change / import
   useEffect(() => {
@@ -117,7 +151,8 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
     if (!a) return;
     // Leave any open editor/selection first: disabling drawing while a shape is selected makes Annotorious throw.
     try { a.cancelSelected(); } catch { /* nothing selected */ }
-    if (tool === 'move') a.setDrawingEnabled(false);
+    toolRef.current = tool;
+    if (tool === 'move' || tool === 'ruler') a.setDrawingEnabled(false);
     else { a.setDrawingTool(tool); a.setDrawingEnabled(true); }
   }, [tool, slide]);
 
@@ -148,7 +183,8 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
       const t = e.target as HTMLElement;
       if (e.metaKey || e.ctrlKey || e.altKey || t.closest('input, textarea, [contenteditable]')) return;
       const k = e.key.toLowerCase();
-      if (k === 'v') setTool('move'); else if (k === 'r') setTool('rect'); else if (k === 'p') setTool('polygon');
+      if (k === 'v') setTool('move'); else if (k === 'r') setTool('rect'); else if (k === 'p') setTool('polygon'); else if (k === 'm') setTool('ruler');
+      else if (k === 'escape') setRulers([]);
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
@@ -174,10 +210,40 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
       </div>
       {tool !== 'move' && (
         <div className="draw-hint">
-          {tool === 'rect' ? 'Click and drag to draw a rectangle' : 'Drag the first edge, click to add points, double-click to finish'}
+          {tool === 'rect' ? 'Click and drag to draw a rectangle'
+            : tool === 'ruler' ? 'Drag to measure · click a label to remove it · Esc clears all'
+            : 'Drag the first edge, click to add points, double-click to finish'}
         </div>
       )}
-      <div className="zoom-badge">{zoomInfo}</div>
+      <svg className="ruler-layer" aria-hidden={rulers.length === 0 && !draft}>
+        {[...rulers, ...(draft ? [draft] : [])].map((r, i) => {
+          const v = osd.current; if (!v) return null;
+          const A = v.viewport.imageToViewerElementCoordinates(new OpenSeadragon.Point(r.a.x, r.a.y));
+          const B = v.viewport.imageToViewerElementCoordinates(new OpenSeadragon.Point(r.b.x, r.b.y));
+          const dx = Math.abs(r.b.x - r.a.x), dy = Math.abs(r.b.y - r.a.y), d = Math.hypot(dx, dy);
+          const f = (px: number) => mpp ? fmtLen(px * mpp) : `${Math.round(px).toLocaleString()} px`;
+          const ang = Math.atan2(B.y - A.y, B.x - A.x), nx = -Math.sin(ang) * 6, ny = Math.cos(ang) * 6;
+          const label = `${f(d)}  (W ${f(dx)} × H ${f(dy)})`;
+          const isDraft = draft && i === rulers.length;
+          return (
+            <g key={i} className="ruler">
+              <line x1={A.x} y1={A.y} x2={B.x} y2={B.y} />
+              <line x1={A.x - nx} y1={A.y - ny} x2={A.x + nx} y2={A.y + ny} />
+              <line x1={B.x - nx} y1={B.y - ny} x2={B.x + nx} y2={B.y + ny} />
+              <g className="ruler-label" transform={`translate(${(A.x + B.x) / 2},${(A.y + B.y) / 2 - 14})`}
+                 onClick={isDraft ? undefined : () => setRulers(rs => rs.filter((_, j) => j !== i))}>
+                <title>{isDraft ? '' : 'Click to remove'}</title>
+                <rect x={-label.length * 3.4 - 8} y={-11} width={label.length * 6.8 + 16} height={22} rx={11} />
+                <text textAnchor="middle" dy="4">{label}</text>
+              </g>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="zoom-badge">
+        {scaleBar && <div className="scale-bar"><div style={{ width: scaleBar.px }} /><span>{scaleBar.label}</span></div>}
+        {zoomInfo}
+      </div>
       {ai?.aiEnabled && (
         <button className={`ai-launch primary ${aiOpen ? 'on' : ''}`} onClick={toggleAi} title={user ? 'Chat with the AI about this slide' : 'Sign in to use the AI'}>
           {icon(<><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /><path d="M19 3v4M17 5h4M5 17v4M3 19h4" /></>)}
