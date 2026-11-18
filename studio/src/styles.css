@@ -216,8 +216,7 @@ aside .section-toggle h3 { margin: 10px 0 6px; flex: 1; text-align: left; }
 
 /* Account button in the top bar + account page */
 .account-btn { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 50%; color: var(--accent); }
-.account-btn.in { border-color: transparent; background: transparent; }
-.account-btn.in:hover { background: transparent; filter: brightness(1.1); }
+.account-btn.in { background: var(--accent-soft, transparent); }
 .body[hidden] { display: none; }
 .account-page { flex: 1; min-height: 0; overflow: auto; display: grid; place-items: start center; padding: 40px 16px; background: var(--wsi-viewer-bg); }
 .account-card { width: min(520px, 100%); padding: 24px 28px; border-radius: 16px; background: var(--surface); color: var(--text-strong); border: 1px solid var(--border-strong); box-shadow: var(--modal-shadow); }

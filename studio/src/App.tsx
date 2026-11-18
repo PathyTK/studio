@@ -137,9 +137,7 @@ export default function App() {
                   title={user ? `Your account (${user.email})` : 'Sign up or sign in'}
                   aria-label={user ? 'Open your account' : 'Sign up or sign in'}
                   onClick={() => user ? setPage('account') : setAuthModal({})}>
-            {user
-              ? <span className="avatar">{(user.name || user.email)[0].toUpperCase()}</span>
-              : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>}
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>
           </button>
         )}
         <ThemeToggle theme={theme} onChange={setTheme} />
