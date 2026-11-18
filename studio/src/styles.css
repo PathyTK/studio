@@ -185,11 +185,13 @@ aside li button small { flex: none; color: var(--text-muted); font-weight: 400; 
 .current-name { margin: 0 0 2px; font-weight: 700; color: var(--sidebar-active); overflow-wrap: anywhere; line-height: 1.3; }
 
 /* Upload collapses to a single icon button while a slide is open */
-.sidebar-upload.compact { padding: 6px 12px; display: flex; justify-content: flex-end; }
+.sidebar-upload.compact { padding: 8px 12px; }
 .upload-compact { display: flex; align-items: center; gap: 8px; }
+.upload-compact .icon-btn { flex: 1; }
 .upload-compact .bar { width: 60px; }
 .upload-compact.drag .icon-btn { border-color: var(--accent); background: var(--sidebar-active-bg); }
-.icon-btn { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 10px; color: var(--accent); }
+.icon-btn { display: flex; align-items: center; justify-content: flex-start; gap: 8px; height: 36px; padding: 0 12px; border-radius: 10px; color: var(--accent); font-weight: 600; }
+.icon-btn span { color: var(--text-strong); font-size: 13px; }
 .icon-btn:disabled { opacity: .6; cursor: progress; }
 
 /* Ruler overlay + real-world scale bar */

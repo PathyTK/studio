@@ -46,6 +46,7 @@ export default function UploadBox({ onUploaded, onError, large, compact }: Props
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m17 8-5-5-5 5" /><path d="M12 3v12" />
           </svg>
+          <span>{progress === null ? 'Upload slide' : 'Uploading…'}</span>
         </button>
         {progress !== null && <div className="bar"><div style={{ width: `${Math.round(progress * 100)}%` }} /></div>}
         <input ref={input} type="file" hidden accept={ACCEPTED_EXT.map(e => '.' + e).join(',')}
