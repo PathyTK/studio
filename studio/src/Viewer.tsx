@@ -163,6 +163,7 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
 
   const zoomBy = (f: number) => { const v = osd.current; if (!v) return; v.viewport.zoomBy(f); v.viewport.applyConstraints(); };
   const home = () => osd.current?.viewport.goHome();
+  const rotateBy = (deg: number) => { const v = osd.current; if (!v) return; v.viewport.setRotation(Math.round((v.viewport.getRotation() + deg) / 90) * 90); };
   const fullscreen = () => {
     const r = root.current; if (!r) return;
     if (document.fullscreenElement) document.exitFullscreen(); else r.requestFullscreen?.();
@@ -201,6 +202,8 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
       <div className="view-controls" role="toolbar" aria-label="View controls">
         <button title="Zoom in" aria-label="Zoom in" onClick={() => zoomBy(1.6)}>{icon(<><path d="M5 12h14" /><path d="M12 5v14" /></>)}</button>
         <button title="Zoom out" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.6)}>{icon(<path d="M5 12h14" />)}</button>
+        <button title="Rotate left" aria-label="Rotate left" onClick={() => rotateBy(-90)}>{icon(<><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></>)}</button>
+        <button title="Rotate right" aria-label="Rotate right" onClick={() => rotateBy(90)}>{icon(<><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></>)}</button>
         <button title="Fit slide" aria-label="Fit slide to view" onClick={home}>{icon(<><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /></>)}</button>
         <button title="Fullscreen" aria-label="Fullscreen" onClick={fullscreen}>{icon(<><path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M21 8V5a2 2 0 0 0-2-2h-3" /><path d="M3 16v3a2 2 0 0 0 2 2h3" /><path d="M16 21h3a2 2 0 0 0 2-2v-3" /></>)}</button>
       </div>
