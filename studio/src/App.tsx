@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { DEMO, SlideEntry, SlideMetadata, listSlides, openSlide } from './api';
+import { DEMO, SlideEntry, SlideMetadata, isFsPath, listSlides, openSlide, setSlidesUser } from './api';
 import { allSlidesWithAnnotations, onAnnotationsSaved } from './storage';
 import { SyncState, onSyncState, signOutCleanup, startSync, stopSync } from './sync';
 import { LONG_LINK, buildShareLink, consumeShareLink } from './share';
@@ -8,6 +8,7 @@ import { Theme, applyTheme, initialTheme } from './theme';
 import ThemeToggle from './ThemeToggle';
 import UploadBox from './UploadBox';
 import AuthModal from './AuthModal';
+import AccountPage from './AccountPage';
 import { AuthConfig, User, fetchConfig, fetchMe, logout } from './auth';
 
 // Comma-separated recipients; override at build time with VITE_CONTACT_EMAIL.
@@ -34,6 +35,7 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [user, setUser] = useState<User | null>(null);
+  const [page, setPage] = useState<'studio' | 'account'>('studio');
   const [authCfg, setAuthCfg] = useState<AuthConfig | null>(null);
   const [authModal, setAuthModal] = useState<{ reason?: string } | null>(null);
   const [sync, setSync] = useState<SyncState>('idle');
@@ -70,8 +72,13 @@ export default function App() {
   }), [user]);
 
   const refresh = () => listSlides().then(setSlides).catch(e => setError(e.message));
+  // Whoever is signed in decides which fs-slides folder is read and written; re-list when that changes.
   useEffect(() => {
+    setSlidesUser(user);
+    setCurrent(c => (c && isFsPath(c.path) ? null : c)); // an open private/guest slide belongs to the previous identity
     refresh();
+  }, [user?.id]);
+  useEffect(() => {
     (async () => {
       let target = new URLSearchParams(location.search).get('open'); // deep link: ?open=public/Case 01.svs
       try {
@@ -119,26 +126,29 @@ export default function App() {
       <header>
         <img className="logo" src="/logo.png" alt="Pathy logo" />
         <span className="logo-text" role="img" aria-label="Pathy" />
-        {!DEMO && authCfg && (user ? (
-          <span className="user-chip" title={user.email}>
-            <span className="avatar">{(user.name || user.email)[0].toUpperCase()}</span>
-            <button className="link" onClick={async () => { await logout().catch(() => {}); signOutCleanup(); setUser(null); setReloadKey(k => k + 1); flash('Signed out'); }}>Sign out</button>
-          </span>
-        ) : (
-          <button className="signin" onClick={() => setAuthModal({})}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>
-            Sign in
-          </button>
-        ))}
         {DEMO && <span className="muted">DEMO MODE · static sample images, no backend</span>}
         <span className="spacer" />
         <button className="primary" onClick={share} title="Copy a link that opens this session, with your annotations, for anyone">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></svg>
           Share
         </button>
+        {!DEMO && authCfg && (
+          <button className={`account-btn ${user ? 'in' : ''}`}
+                  title={user ? `Your account (${user.email})` : 'Sign up or sign in'}
+                  aria-label={user ? 'Open your account' : 'Sign up or sign in'}
+                  onClick={() => user ? setPage('account') : setAuthModal({})}>
+            {user
+              ? <span className="avatar">{(user.name || user.email)[0].toUpperCase()}</span>
+              : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>}
+          </button>
+        )}
         <ThemeToggle theme={theme} onChange={setTheme} />
       </header>
-      <div className="body">
+      {page === 'account' && user && (
+        <AccountPage user={user} slides={slides} onBack={() => setPage('studio')}
+                     onSignOut={async () => { await logout().catch(() => {}); signOutCleanup(); setUser(null); setPage('studio'); setReloadKey(k => k + 1); flash('Signed out'); }} />
+      )}
+      <div className="body" hidden={page === 'account' && !!user}>
         <aside className="sidebar">
           {current && (<div className="sidebar-current">
             <h3>Current slide</h3>

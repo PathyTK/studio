@@ -213,3 +213,24 @@ aside .section-toggle h3 { margin: 10px 0 6px; flex: 1; text-align: left; }
 
 .empty-note a { color: var(--accent); font-weight: 600; }
 .empty-slides { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0; color: var(--text-muted); font-size: 12px; }
+
+/* Account button in the top bar + account page */
+.account-btn { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 50%; color: var(--accent); }
+.account-btn.in { border-color: transparent; background: transparent; }
+.account-btn.in:hover { background: transparent; filter: brightness(1.1); }
+.body[hidden] { display: none; }
+.account-page { flex: 1; min-height: 0; overflow: auto; display: grid; place-items: start center; padding: 40px 16px; background: var(--wsi-viewer-bg); }
+.account-card { width: min(520px, 100%); padding: 24px 28px; border-radius: 16px; background: var(--surface); color: var(--text-strong); border: 1px solid var(--border-strong); box-shadow: var(--modal-shadow); }
+.account-card .back { margin-bottom: 16px; text-decoration: none; }
+.account-head { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.account-head h2 { margin: 0; overflow-wrap: anywhere; }
+.account-head p { margin: 2px 0 0; }
+.avatar.big { width: 56px; height: 56px; font-size: 24px; flex: none; }
+.account-info { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0 0 20px; font-size: 14px; }
+.account-info dt { color: var(--text-muted); }
+.account-info dd { margin: 0; overflow-wrap: anywhere; }
+.account-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+.account-stats div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 6px; border-radius: 12px; background: var(--sidebar-active-bg); text-align: center; }
+.account-stats strong { font-size: 26px; font-variant-numeric: tabular-nums; }
+.account-stats span { font-size: 12px; color: var(--text-muted); }
+.account-card .wide { width: 100%; padding: 10px; }

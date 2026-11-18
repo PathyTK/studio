@@ -4,16 +4,17 @@ server {
     index index.html;
     gzip on;
 
-    # Slide uploads: stream straight to rslides, no size cap here (rslides enforces MAX_UPLOAD_BYTES).
-    location /api/upload/ {
-        client_max_body_size 0;
+    # Uploaded slides (upload in chunks, list, open, tiles) live in fs-slides: it authenticates the caller itself
+    # (studio token or X-Session-Id), so the headers must reach it untouched. Chunks are 8 MB; fs-slides enforces quotas.
+    location /api/fs {
+        client_max_body_size 64m;
         proxy_request_buffering off;
-        proxy_read_timeout 3600s;
-        proxy_send_timeout 3600s;
-        proxy_pass ${RSLIDES_URL};
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+        proxy_pass ${FS_SLIDES_URL};
         proxy_http_version 1.1;
         proxy_ssl_server_name on;
-        proxy_set_header Host ${RSLIDES_HOST};
+        proxy_set_header Host ${FS_SLIDES_HOST};
     }
 
     # Accounts + AI go to the pathy-api service (same origin, so the session cookie just works).

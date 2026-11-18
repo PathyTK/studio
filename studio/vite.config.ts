@@ -11,6 +11,10 @@ export default defineConfig({
   plugins: [react()],
   define: { 'import.meta.env.VITE_DEMO': JSON.stringify(demo) },
   server: {
-    proxy: { '/api': process.env.RSLIDES_URL ?? 'http://localhost:8080' },
+    proxy: {
+      // uploaded slides: fs-slides; everything else under /api: rslides (accounts/AI run via the api service or Vercel)
+      '/api/fs': process.env.FS_SLIDES_URL ?? 'http://localhost:2500',
+      '/api': process.env.RSLIDES_URL ?? 'http://localhost:8080',
+    },
   },
 });

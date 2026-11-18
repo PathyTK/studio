@@ -10,6 +10,19 @@ services:
       - ./slides/public:/slides/public:ro   # public slides: drop .svs files here, everyone sees them
       - uploads:/slides/sessions            # anonymous uploads
     expose: ["8080"]
+  fs-slides:                 # uploads (chunked), "Your slides" and viewing of uploaded files; guests and signed-in users
+    build: ./repos/fs-slides
+    environment:
+      SLIDE_DIR: /slides
+      THUMBNAIL_DIR: /thumbnails
+      APP_PORT: "2500"
+      GUEST_TTL_HOURS: "24"      # guest uploads (nobody signed in) are deleted after this
+      SLIDES_TOKEN_SECRET: ${SLIDES_TOKEN_SECRET:-local-dev-only-secret-change-me-local-dev-only}   # must equal the api's; local default only
+    volumes:
+      - fsdata:/slides                       # <email>/ and guests/<session>/ folders
+      - ./slides/public:/slides/public:ro
+      - fsthumbs:/thumbnails
+    expose: ["2500"]
   postgres:                  # LOCAL development database. In production the API uses your hosted Postgres (DATABASE_URL).
     image: postgres:16
     environment:
@@ -30,6 +43,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: "8080"
+      SLIDES_TOKEN_SECRET: ${SLIDES_TOKEN_SECRET:-local-dev-only-secret-change-me-local-dev-only}
       DATABASE_URL: ${DATABASE_URL:-postgres://pathy:pathy@postgres:5432/pathy}
     depends_on:
       postgres:
@@ -46,10 +60,13 @@ services:
     environment:
       PORT: "8080"
       RSLIDES_URL: ${RSLIDES_URL:-http://rslides:8080}   # set in .env to use a remote rslides (e.g. Cloud Run) instead of the local container
+      FS_SLIDES_URL: ${FS_SLIDES_URL:-http://fs-slides:2500}   # set in .env to use a remote fs-slides
       API_URL: http://api:8080
     ports: ["3000:8080"]
-    depends_on: [rslides, api]
+    depends_on: [rslides, fs-slides, api]
 volumes:
   uploads:
+  fsdata:
+  fsthumbs:
   pgdata:
   ollama:

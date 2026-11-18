@@ -15,7 +15,7 @@ server -> Postgres (container)                                  `-- slides: brow
 - `server/` – accounts, saved annotations and AI chat as ONE framework-free request handler (`src/handler.ts`, Web `Request` -> `Response`) on Postgres. `src/node-server.ts` runs it in Docker; tests use an in-process Postgres (PGlite).
 - `api/[...path].ts` – the same handler as a **Vercel Function**. (`api/` at the repo root is Vercel's functions folder; the shared code lives in `server/`.)
 - `repos/rslides` – changed (branch `pathy-3.0`): public slide library, anonymous uploads, path-traversal guard, Cloud Run `PORT`, slimmer Docker build. See *Slides and uploads*.
-- `repos/fs-slides`, `repos/pathy-web` – reference only, unchanged. fs-slides is not needed for the POC.
+- `repos/fs-slides` – changed (branch `pathy-3.0`): guest sessions (`X-Session-Id`), `open`/`tile` routes, per-caller path authorization (also on thumbnails), guest quota + cleanup. `repos/pathy-web` – reference only, unchanged.
 
 ## Accounts and AI (guarded behind sign-up)
 Browsing, drawing, uploading and sharing stay anonymous. **Chat with the AI is only for signed-in users with a confirmed email.**
@@ -86,7 +86,7 @@ Pan / Rectangle / Polygon live in the viewer toolbar (shortcuts V / R / P). Poly
 
 ## Slides and uploads
 - **Public slides** (visible to every visitor): files in `SLIDE_DIR/public` (`./slides/public` locally; a demo slide is baked into the image).
-- **Uploads**: the big "Upload your slide" box (drag & drop). The browser makes a random session id; the file goes to `SLIDE_DIR/sessions/<id>/` via `PUT /api/upload/:session/:filename` and is listed under "Your uploads" for that session only. rslides checks the extension, the size (`MAX_UPLOAD_BYTES`, default 2 GB, matched by `VITE_MAX_UPLOAD_MB` in the UI), max 10 slides per session, and that OpenSlide can actually read the file. Folders older than `SESSION_TTL_HOURS` (default 24) are deleted hourly.
+- **Uploads (fs-slides)**: the big "Upload your slide" box (drag & drop) sends the file in 8 MB chunks to `POST /api/fs/upload` on fs-slides. Signed-in users write to their own folder (`<email>/`, authenticated with the short-lived studio token); everyone else gets a temporary guest folder (`guests/<session id>/`, the id is a random value kept in `sessionStorage`, sent as `X-Session-Id`) that is deleted after `GUEST_TTL_HOURS` (default 24). Quotas: 5 GB per user, 2 GB per guest session. Uploaded slides are opened through `GET /api/fs/open/<path>` and `GET /api/fs/tile/...`; the viewer sends the credentials with every tile request. Anyone can open `public/...` plus their own folder, nothing else. rslides is now only used for the public library.
 - API: `GET /api/slides?session=<id>` (public + own), `PUT /api/upload/:session/:filename`, `GET /api/open/*path`, `GET /api/tile/serve/...`.
 - Anyone who knows a session id can open that session's uploads (no accounts); the id is random and never listed.
 - **Cloud Run limit:** HTTP/1 requests are capped at 32 MB, so large uploads need HTTP/2 end to end, or (better, not built) direct signed uploads to a GCS bucket. Also add rate limiting before exposing this publicly.

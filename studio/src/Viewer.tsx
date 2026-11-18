@@ -3,7 +3,7 @@ import OpenSeadragon from 'openseadragon';
 // @ts-expect-error no types shipped
 import Annotorious from '@recogito/annotorious-openseadragon';
 import '@recogito/annotorious-openseadragon/dist/annotorious.min.css';
-import { SlideMetadata, tileUrl } from './api';
+import { SlideMetadata, fsHeadersSync, isFsPath, tileUrl } from './api';
 import { Annotation, loadAnnotations, saveAnnotations } from './storage';
 import AiPanel from './AiPanel';
 import type { AuthConfig, ChatContext, User } from './auth';
@@ -44,6 +44,10 @@ class PathyTileSource extends (OpenSeadragon as any).TileSource {
   getTileUrl(level: number, x: number, y: number) {
     return tileUrl(this.meta.path, level, x, y);
   }
+  // fs-slides tiles need credentials (bearer token or guest session id); an <img> cannot send headers, so OSD fetches them via XHR
+  getTileAjaxHeaders() {
+    return isFsPath(this.meta.path) ? fsHeadersSync() : {};
+  }
 }
 
 export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireAuth, onSignedOut }: Props) {
@@ -69,6 +73,7 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
       element: el.current!,
       prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@4.1.1/build/openseadragon/images/',
       tileSources: (slide.dzi ?? new PathyTileSource(slide)) as any,
+      loadTilesWithAjax: !slide.dzi && isFsPath(slide.path),
       crossOriginPolicy: 'Anonymous', // tiles may come from another origin (rslides on Cloud Run); without CORS the AI screenshot canvas would be unreadable
       showNavigationControl: false, // replaced by our own controls below (same style as the drawing toolbar)
       showNavigator: true,
