@@ -19,6 +19,14 @@ const shortName = (name: string) => name.replace(/\.[^.]+$/, '').replace(/[_]+/g
 export default function App() {
   const [slides, setSlides] = useState<SlideEntry[]>([]);
   const [current, setCurrent] = useState<SlideMetadata | null>(null);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('pathy.collapsed') ?? '{}'); } catch { return {}; }
+  });
+  const toggleSection = (scope: string) => setCollapsed(c => {
+    const n = { ...c, [scope]: !c[scope] };
+    try { localStorage.setItem('pathy.collapsed', JSON.stringify(n)); } catch { /* storage blocked */ }
+    return n;
+  });
   const [count, setCount] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState('');
@@ -157,9 +165,25 @@ export default function App() {
             return (
               <div key={scope}>
                 <div className="section-head">
-                  <h3>{scope === 'public' ? 'Public slides' : 'Your slides'}</h3>
+                  <button className="section-toggle" aria-expanded={!collapsed[scope]} onClick={() => toggleSection(scope)}>
+                    <svg className="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m6 9 6 6 6-6" /></svg>
+                    <h3>{scope === 'public' ? 'Public slides' : 'Your slides'}</h3>
+                    <span className="count">{list.length}</span>
+                  </button>
                 </div>
-                {list.length === 0 && scope === 'mine' && <p className="muted empty-note">Slides you upload show up here. They are private to this session and deleted after 24 hours.</p>}
+                {!collapsed[scope] && (<>
+                {scope === 'mine' && !user && (
+                  <p className="muted empty-note">
+                    Create an account to persist your slides across devices.
+                    {authCfg && <> <a href="#" onClick={e => { e.preventDefault(); setAuthModal({ reason: 'Create a free account to keep your slides across devices.' }); }}>Sign up free</a></>}
+                  </p>
+                )}
+                {scope === 'mine' && user && list.length === 0 && (
+                  <div className="empty-slides">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+                    <span>No slides yet</span>
+                  </div>
+                )}
                 {list.length === 0 && scope === 'public' && !error && <p className="muted">No slides found.</p>}
                 <ul>
                   {list.map(s => (
@@ -170,6 +194,7 @@ export default function App() {
                     </li>
                   ))}
                 </ul>
+                </>)}
               </div>
             );
           })}

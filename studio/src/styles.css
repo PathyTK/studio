@@ -202,3 +202,14 @@ aside li button small { flex: none; color: var(--text-muted); font-weight: 400; 
 .ruler-label text { fill: #fff; font-size: 12px; font-variant-numeric: tabular-nums; }
 .scale-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: 4px; font-size: 12px; }
 .scale-bar div { height: 6px; border: 2px solid var(--text-strong); border-top: 0; box-sizing: content-box; }
+
+/* Collapsible slide sections */
+aside .section-toggle { display: flex; align-items: center; gap: 6px; width: 100%; padding: 2px 0; border: 0; background: transparent; color: var(--text-muted); }
+aside .section-toggle:hover { background: transparent; color: var(--text-strong); }
+aside .section-toggle h3 { margin: 10px 0 6px; flex: 1; text-align: left; }
+.section-toggle .chev { transition: transform .15s; flex: none; }
+.section-toggle[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+.section-toggle .count { font-size: 11px; padding: 0 7px; border-radius: 999px; background: var(--toggle-track-bg); }
+
+.empty-note a { color: var(--accent); font-weight: 600; }
+.empty-slides { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0; color: var(--text-muted); font-size: 12px; }
