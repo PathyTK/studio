@@ -133,11 +133,6 @@ export default function App() {
   return (
     <div className="app">
       <header>
-        <button className="sidebar-toggle" onClick={toggleSidebar} aria-expanded={sidebarOpen}
-                title={sidebarOpen ? 'Hide the slide list' : 'Show the slide list'}
-                aria-label={sidebarOpen ? 'Hide the slide list' : 'Show the slide list'}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
-        </button>
         <img className="logo" src="/logo.png" alt="Pathy logo" />
         <span className="logo-text" role="img" aria-label="Pathy" />
         {!DEMO && authCfg && (
@@ -161,6 +156,11 @@ export default function App() {
                      onSignOut={async () => { await logout().catch(() => {}); signOutCleanup(); setUser(null); setPage('studio'); setReloadKey(k => k + 1); flash('Signed out'); }} />
       )}
       <div className="body" hidden={page === 'account' && !!user}>
+        <button className={`sidebar-handle ${sidebarOpen ? 'open' : ''}`} onClick={toggleSidebar} aria-expanded={sidebarOpen}
+                title={sidebarOpen ? 'Hide the slide list' : 'Show the slide list'}
+                aria-label={sidebarOpen ? 'Hide the slide list' : 'Show the slide list'}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m15 18-6-6 6-6" /></svg>
+        </button>
         <aside className="sidebar" hidden={!sidebarOpen}>
           {current && (<div className="sidebar-current">
             <h3>Current slide</h3>

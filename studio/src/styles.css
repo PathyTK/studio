@@ -215,7 +215,10 @@ aside .section-toggle h3 { margin: 10px 0 6px; flex: 1; text-align: left; }
 .empty-slides { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0; color: var(--text-muted); font-size: 12px; }
 
 aside.sidebar[hidden] { display: none; }
-.sidebar-toggle { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 8px; color: var(--text-muted); }
+.body { position: relative; }
+.sidebar-handle { position: absolute; top: 14px; left: 0; z-index: 5; display: grid; place-items: center; width: 20px; height: 40px; padding: 0; border-radius: 0 8px 8px 0; border-left: 0; color: var(--text-muted); }
+.sidebar-handle.open { left: 240px; }
+.sidebar-handle:not(.open) svg { transform: rotate(180deg); }
 
 /* Account button in the top bar + account page */
 .account-btn { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 50%; color: var(--accent); }
