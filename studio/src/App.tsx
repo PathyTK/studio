@@ -23,6 +23,15 @@ export default function App() {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem('pathy.collapsed') ?? '{}'); } catch { return {}; }
   });
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try { return localStorage.getItem('pathy.sidebar') !== 'closed'; } catch { return true; }
+  });
+  const toggleSidebar = () => setSidebarOpen(o => {
+    try { localStorage.setItem('pathy.sidebar', o ? 'closed' : 'open'); } catch { /* storage blocked */ }
+    return !o;
+  });
+  // Let the viewer re-measure its container after the bar slides in or out.
+  useEffect(() => { window.dispatchEvent(new Event('resize')); }, [sidebarOpen]);
   const toggleSection = (scope: string) => setCollapsed(c => {
     const n = { ...c, [scope]: !c[scope] };
     try { localStorage.setItem('pathy.collapsed', JSON.stringify(n)); } catch { /* storage blocked */ }
@@ -124,14 +133,13 @@ export default function App() {
   return (
     <div className="app">
       <header>
+        <button className="sidebar-toggle" onClick={toggleSidebar} aria-expanded={sidebarOpen}
+                title={sidebarOpen ? 'Hide the slide list' : 'Show the slide list'}
+                aria-label={sidebarOpen ? 'Hide the slide list' : 'Show the slide list'}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
+        </button>
         <img className="logo" src="/logo.png" alt="Pathy logo" />
         <span className="logo-text" role="img" aria-label="Pathy" />
-        {DEMO && <span className="muted">DEMO MODE · static sample images, no backend</span>}
-        <span className="spacer" />
-        <button className="primary" onClick={share} title="Copy a link that opens this session, with your annotations, for anyone">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></svg>
-          Share
-        </button>
         {!DEMO && authCfg && (
           <button className={`account-btn ${user ? 'in' : ''}`}
                   title={user ? `Your account (${user.email})` : 'Sign up or sign in'}
@@ -140,6 +148,12 @@ export default function App() {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>
           </button>
         )}
+        {DEMO && <span className="muted">DEMO MODE · static sample images, no backend</span>}
+        <span className="spacer" />
+        <button className="primary" onClick={share} title="Copy a link that opens this session, with your annotations, for anyone">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></svg>
+          Share
+        </button>
         <ThemeToggle theme={theme} onChange={setTheme} />
       </header>
       {page === 'account' && user && (
@@ -147,7 +161,7 @@ export default function App() {
                      onSignOut={async () => { await logout().catch(() => {}); signOutCleanup(); setUser(null); setPage('studio'); setReloadKey(k => k + 1); flash('Signed out'); }} />
       )}
       <div className="body" hidden={page === 'account' && !!user}>
-        <aside className="sidebar">
+        <aside className="sidebar" hidden={!sidebarOpen}>
           {current && (<div className="sidebar-current">
             <h3>Current slide</h3>
             <p className="current-name" title={current.path.split('/').pop()}>{shortName(current.path.split('/').pop() ?? '')}</p>
