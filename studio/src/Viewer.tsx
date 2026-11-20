@@ -179,7 +179,7 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
     return ctx;
   };
   const toggleAi = () => {
-    if (!user) return onRequireAuth('Create a free account to chat with the AI about your slides.');
+    if (!user) return onRequireAuth('Create your Pathy account to chat with the AI about your slides.');
     setAiOpen(o => !o);
   };
 

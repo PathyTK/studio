@@ -78,7 +78,7 @@ export default function App() {
   useEffect(() => onAnnotationsSaved(() => {
     if (user) return;
     try { if (sessionStorage.getItem('pathy:local-hint') === '1') return; sessionStorage.setItem('pathy:local-hint', '1'); } catch { /* ignore */ }
-    flash(DEMO ? 'Annotations stay in this browser tab only.' : 'Annotations are saved only in this browser. Create a free account to keep them.');
+    flash(DEMO ? 'Annotations stay in this browser tab only.' : 'Annotations are saved only in this browser. Create your Pathy account to keep them.');
   }), [user]);
 
   const refresh = () => listSlides().then(setSlides).catch(e => setError(e.message));
@@ -177,7 +177,7 @@ export default function App() {
                 <strong>Saved only in this browser</strong>
                 <span>{DEMO ? 'Demo mode: annotations stay in this browser tab and disappear when you close it.'
                   : 'Your annotations stay in this browser tab and disappear when you close it. Sign up to keep them in your account.'}</span>
-                {!DEMO && authCfg && <button className="primary" onClick={() => setAuthModal({ reason: 'Create a free account to keep your annotations and use the AI.' })}>Sign up free</button>}
+                {!DEMO && authCfg && <button className="primary" onClick={() => setAuthModal({ reason: 'Create your Pathy account to keep your annotations and use the AI.' })}>Sign up free</button>}
               </div>
             )}
           </div>)}
@@ -198,7 +198,7 @@ export default function App() {
                 {scope === 'mine' && !user && (
                   <p className="muted empty-note">
                     Create an account to persist your slides across devices.
-                    {authCfg && <> <a href="#" onClick={e => { e.preventDefault(); setAuthModal({ reason: 'Create a free account to keep your slides across devices.' }); }}>Sign up free</a></>}
+                    {authCfg && <> <a href="#" onClick={e => { e.preventDefault(); setAuthModal({ reason: 'Create your Pathy account to keep your slides across devices.' }); }}>Sign up free</a></>}
                   </p>
                 )}
                 {scope === 'mine' && user && list.length === 0 && (

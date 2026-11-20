@@ -72,7 +72,7 @@ export default function AuthModal({ reason, config, onClose, onAuthed }: Props) 
             <button onClick={() => { setMode('signin'); setInfo(''); }}>Back to sign in</button>
           </div>
         </>) : (<>
-          <h2>{mode === 'signup' ? 'Create your free account' : 'Welcome back'}</h2>
+          <h2>{mode === 'signup' ? 'Create your Pathy account' : 'Welcome back'}</h2>
           <p className="muted">{reason ?? 'An account is required for the AI features.'}</p>
           {config?.googleClientId && (<>
             <div ref={gbtn} className="google-btn" />
