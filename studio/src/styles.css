@@ -214,6 +214,11 @@ aside .section-toggle h3 { margin: 10px 0 6px; flex: 1; text-align: left; }
 .empty-note a { color: var(--accent); font-weight: 600; }
 .empty-slides { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0; color: var(--text-muted); font-size: 12px; }
 
+aside .folder-toggle { border-color: transparent; background: transparent; width: 100%; text-align: left; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+aside .folder-toggle .chev { flex: none; transition: transform .15s; transform: rotate(-90deg); }
+aside .folder-toggle[aria-expanded="true"] .chev { transform: none; }
+aside .folder-toggle .slide-name { flex: 1; font-weight: 600; }
+aside .folder-children { margin-left: 10px; padding-left: 6px; border-left: 1px solid var(--filter-sidebar-border); }
 aside.sidebar[hidden] { display: none; }
 .body { position: relative; }
 .sidebar-handle { position: absolute; top: 14px; left: 0; z-index: 5; display: grid; place-items: center; width: 20px; height: 40px; padding: 0; border-radius: 0 8px 8px 0; border-left: 0; color: var(--text-muted); }

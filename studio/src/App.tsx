@@ -9,6 +9,7 @@ import ThemeToggle from './ThemeToggle';
 import UploadBox from './UploadBox';
 import AuthModal from './AuthModal';
 import AccountPage from './AccountPage';
+import SlideTree from './SlideTree';
 import { AuthConfig, User, fetchConfig, fetchMe, logout } from './auth';
 
 // Comma-separated recipients; override at build time with VITE_CONTACT_EMAIL.
@@ -207,15 +208,17 @@ export default function App() {
                   </div>
                 )}
                 {list.length === 0 && scope === 'public' && !error && <p className="muted">No slides found.</p>}
-                <ul>
-                  {list.map(s => (
-                    <li key={s.path}>
-                      <button className={current?.path === s.path ? 'active' : ''} onClick={() => open(s.path)}>
-                        <span className="slide-name" title={s.name}>{shortName(s.name)}</span>{s.size > 0 && <small>{(s.size / 1e6).toFixed(1)} MB</small>}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                {scope === 'public'
+                  ? <SlideTree slides={list} prefix="public/" currentPath={current?.path} label={shortName} onOpen={open} />
+                  : <ul>
+                      {list.map(s => (
+                        <li key={s.path}>
+                          <button className={current?.path === s.path ? 'active' : ''} onClick={() => open(s.path)}>
+                            <span className="slide-name" title={s.name}>{shortName(s.name)}</span>{s.size > 0 && <small>{(s.size / 1e6).toFixed(1)} MB</small>}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>}
                 </>)}
               </div>
             );

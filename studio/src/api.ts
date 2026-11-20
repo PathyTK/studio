@@ -107,28 +107,35 @@ export async function uploadSlide(file: File, onProgress: (p: number) => void): 
   return { path, name: file.name };
 }
 
-/** Your slides in fs-slides (flat list). A missing folder just means you have not uploaded anything yet. */
-async function listMine(): Promise<SlideEntry[]> {
-  const r = await fetch(fsUrl(''), { headers: await fsHeaders() }).catch(() => null);
-  if (!r || !r.ok) return [];
-  const tree = await r.json() as { label: string; path: string; isFolder: boolean; metadata?: { size?: number }; children?: unknown[] }[];
-  const priv = tree.find(n => n.label === 'private');
+type FsNode = { label: string; path: string; isFolder: boolean; metadata?: { size?: number }; children?: FsNode[] };
+
+/** Flattens one root of the fs-slides tree into slide files. The folder structure survives in each `path`. */
+function collectSlides(nodes: FsNode[], scope: 'public' | 'mine'): SlideEntry[] {
   const out: SlideEntry[] = [];
-  const walk = (nodes: typeof tree) => nodes.forEach(n => {
-    if (n.isFolder) walk((n.children ?? []) as typeof tree);
-    else if (ACCEPTED_EXT.includes(n.label.split('.').pop()?.toLowerCase() ?? '')) out.push({ path: n.path, name: n.label, size: n.metadata?.size ?? 0, scope: 'mine' });
+  const walk = (ns: FsNode[]) => ns.forEach(n => {
+    if (n.isFolder) walk(n.children ?? []);
+    else if (ACCEPTED_EXT.includes(n.label.split('.').pop()?.toLowerCase() ?? '')) out.push({ path: n.path, name: n.label, size: n.metadata?.size ?? 0, scope });
   });
-  walk(priv?.children as typeof tree ?? []);
+  walk(nodes);
   return out;
+}
+
+/** fs-slides answers with `[{label:'private',...}, {label:'public',...}]`: nested folders with `isFolder` and `children`.
+ *  null when it cannot be reached (the caller then falls back to rslides' flat public list). */
+async function fetchFsTree(): Promise<{ mine: SlideEntry[]; pub: SlideEntry[] } | null> {
+  const r = await fetch(fsUrl(''), { headers: await fsHeaders() }).catch(() => null);
+  if (!r || !r.ok) return null;
+  const tree = await r.json() as FsNode[];
+  const root = (label: string) => tree.find(n => n.label === label)?.children ?? [];
+  return { mine: collectSlides(root('private'), 'mine'), pub: collectSlides(root('public'), 'public') };
 }
 
 export async function listSlides(): Promise<SlideEntry[]> {
   if (DEMO) return DEMO_SLIDES.map(({ path, name, size }) => ({ path, name, size, scope: 'public' as const }));
-  const [pub, mine] = await Promise.all([
-    fetch(`${BASE}/api/slides`).then(r => { if (!r.ok) throw new Error(`Cannot list slides (${r.status})`); return r.json() as Promise<SlideEntry[]>; }),
-    listMine(),
-  ]);
-  return [...mine, ...pub.filter(s => s.scope !== 'mine')];
+  const fsTree = await fetchFsTree();
+  if (fsTree) return [...fsTree.mine, ...fsTree.pub];
+  const pub = await fetch(`${BASE}/api/slides`).then(r => { if (!r.ok) throw new Error(`Cannot list slides (${r.status})`); return r.json() as Promise<SlideEntry[]>; });
+  return pub.filter(s => s.scope !== 'mine');
 }
 
 export async function openSlide(path: string): Promise<SlideMetadata> {
