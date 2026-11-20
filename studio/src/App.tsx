@@ -10,6 +10,7 @@ import UploadBox from './UploadBox';
 import AuthModal from './AuthModal';
 import AccountPage from './AccountPage';
 import SlideTree from './SlideTree';
+import ErrorDialog from './ErrorDialog';
 import { AuthConfig, User, fetchConfig, fetchMe, logout } from './auth';
 
 // Comma-separated recipients; override at build time with VITE_CONTACT_EMAIL.
@@ -231,11 +232,10 @@ export default function App() {
           )}
         </aside>
         <main>
-          {error && <div className="error" onClick={() => setError('')}>{error} <small>(click to dismiss)</small></div>}
           {loading && <div className="overlay">Opening slide…</div>}
           {current
             ? <Viewer slide={current} onCount={setCount} reloadKey={reloadKey} user={user} ai={DEMO ? null : authCfg}
-                    onRequireAuth={reason => setAuthModal({ reason })} onSignedOut={() => setUser(null)} />
+                    onRequireAuth={reason => setAuthModal({ reason })} onSignedOut={() => setUser(null)} onError={setError} />
             : <div className="empty">
                 <UploadBox large onUploaded={onUploaded} onError={setError} />
                 <p className="muted">…or pick a public slide from the list.</p>
@@ -246,6 +246,7 @@ export default function App() {
         <AuthModal reason={authModal.reason} config={authCfg} onClose={() => setAuthModal(null)}
                    onAuthed={u => { setUser(u); setAuthModal(null); flash(`Signed in as ${u.email}`); }} />
       )}
+      {error && <ErrorDialog message={error} onClose={() => setError('')} />}
       {toast && <div className="toast" role="status">{toast}</div>}
       <footer>
         <span>© {new Date().getFullYear()} Pathy. All rights reserved.</span>

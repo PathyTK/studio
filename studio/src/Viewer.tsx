@@ -25,6 +25,7 @@ interface Props {
   ai: AuthConfig | null;          // null when the backend is unavailable (demo mode)
   onRequireAuth: (reason: string) => void;
   onSignedOut: () => void;
+  onError?: (msg: string) => void; // shown to the user as a pop-up
 }
 
 const icon = (d: React.ReactNode) => (
@@ -50,7 +51,8 @@ class PathyTileSource extends (OpenSeadragon as any).TileSource {
   }
 }
 
-export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireAuth, onSignedOut }: Props) {
+export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireAuth, onSignedOut, onError }: Props) {
+  const onErrorRef = useRef(onError); onErrorRef.current = onError;
   const [aiOpen, setAiOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const zoomLabel = useRef('');
@@ -117,6 +119,11 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
       const len = niceLen(unit * 120);
       setScaleBar({ px: len / unit, label: mpp ? fmtLen(len) : `${len.toLocaleString()} px` });
     };
+    // A slide that cannot be read (renderer down, expired session): say so once instead of showing a blank canvas.
+    let failed = false;
+    const fail = (msg: string) => { if (!failed) { failed = true; onErrorRef.current?.(msg); } };
+    viewer.addHandler('open-failed', () => fail('This slide could not be opened. The slide server did not answer. Try again in a moment.'));
+    viewer.addHandler('tile-load-failed', () => fail('Some parts of this slide could not be loaded. The slide server may be unavailable or your session may have expired. Try again in a moment.'));
     viewer.addHandler('zoom', update);
     viewer.addHandler('open', update);
     viewer.addHandler('animation', () => setTick(t => t + 1));

@@ -28,7 +28,6 @@ main { flex: 1; position: relative; min-width: 0; }
 .osd { width: 100%; height: 100%; }
 .osd { background: var(--wsi-viewer-bg); }
 .overlay { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-muted); pointer-events: none; }
-.error { position: absolute; z-index: 5; top: 12px; left: 12px; right: 12px; padding: 10px; background: var(--surface); color: var(--error-text); border: 1px solid var(--error-text); border-radius: 8px; }
 .zoom-badge { position: absolute; left: 12px; bottom: 12px; padding: 4px 10px; background: var(--surface); color: var(--text-strong); border: 1px solid var(--border-strong); box-shadow: var(--theme-toggle-shadow); border-radius: 8px; font-variant-numeric: tabular-nums; }
 
 .theme-toggle { display: flex; align-items: center; gap: 4px; height: 32px; padding: 1px; border-radius: 999px; background: var(--toggle-track-bg); border: 1px solid var(--toggle-border-bg); box-shadow: var(--theme-toggle-shadow); }
@@ -57,7 +56,6 @@ button.primary:hover { filter: brightness(1.08); background: var(--accent-gradie
 .bar { width: 100%; height: 8px; border-radius: 999px; background: var(--toggle-track-bg); overflow: hidden; }
 .bar div { height: 100%; background: var(--accent-gradient); transition: width .2s; }
 .empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; overflow: auto; }
-.error { cursor: pointer; }
 
 /* Drawing tools live inside the viewer */
 .draw-toolbar { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; align-items: center; gap: 4px; padding: 4px;
@@ -108,6 +106,12 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); tex
 .auth-tabs button { flex: 1; padding: 9px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); font-size: 15px; }
 .auth-tabs button:hover { background: var(--sidebar-hover-bg); }
 .auth-tabs button.active { background: var(--sidebar-active-bg); color: var(--text-strong); }
+.error-backdrop { z-index: 200; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); touch-action: manipulation; }
+.error-dialog { text-align: center; max-height: calc(100dvh - 32px); border-color: var(--error-text); }
+.error-dialog .error-icon { color: var(--error-text); margin-bottom: 6px; }
+.error-dialog p { margin: 0 0 18px; font-size: 16px; line-height: 1.45; overflow-wrap: anywhere; }
+.error-dialog .modal-close { width: 44px; height: 44px; top: 6px; right: 6px; }
+.error-dialog .wide { min-height: 48px; font-size: 16px; }
 .google-btn { display: flex; justify-content: center; margin: 14px 0 4px; min-height: 44px; }
 .or { display: flex; align-items: center; gap: 14px; color: var(--text-muted); font-size: 12px; letter-spacing: .1em; margin-top: 8px; }
 .or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--border-strong); }
