@@ -206,7 +206,7 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
   return (
     <div className="viewer" ref={root}>
       <div ref={el} className="osd" />
-      <div className="view-controls" role="toolbar" aria-label="View controls">
+      <div className={`view-controls ${aiOpen ? 'ai-open' : ''}`} role="toolbar" aria-label="View controls">
         <button title="Zoom in" aria-label="Zoom in" onClick={() => zoomBy(1.6)}>{icon(<><path d="M5 12h14" /><path d="M12 5v14" /></>)}</button>
         <button title="Zoom out" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.6)}>{icon(<path d="M5 12h14" />)}</button>
         <button title="Rotate left" aria-label="Rotate left" onClick={() => rotateBy(-90)}>{icon(<><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></>)}</button>
