@@ -13,7 +13,7 @@ const loadGsi = () => (gsiLoading ??= new Promise<void>((res, rej) => {
 }));
 
 export default function AuthModal({ reason, config, onClose, onAuthed }: Props) {
-  const [mode, setMode] = useState<Mode>('signup');
+  const [mode, setMode] = useState<Mode>('signin');
   const [name, setName] = useState(''); const [email, setEmail] = useState(''); const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [info, setInfo] = useState('');
   const gbtn = useRef<HTMLDivElement>(null);
