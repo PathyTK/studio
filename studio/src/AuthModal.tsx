@@ -37,7 +37,7 @@ export default function AuthModal({ reason, config, onClose, onAuthed }: Props) 
           try { onAuthed(await googleLogin(resp.credential)); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
         },
       });
-      g.renderButton(gbtn.current, { theme: 'outline', size: 'large', width: 320, text: 'continue_with', shape: 'pill' });
+      g.renderButton(gbtn.current, { theme: 'outline', size: 'large', width: Math.min(400, gbtn.current.clientWidth || 340), text: 'continue_with', shape: 'rectangular' });
     }).catch(() => setError('Could not load Google sign-in.'));
     return () => { cancelled = true; };
   }, [config?.googleClientId, mode]);
@@ -72,26 +72,27 @@ export default function AuthModal({ reason, config, onClose, onAuthed }: Props) 
             <button onClick={() => { setMode('signin'); setInfo(''); }}>Back to sign in</button>
           </div>
         </>) : (<>
-          <h2>{mode === 'signup' ? 'Create your Pathy account' : 'Welcome back'}</h2>
-          <p className="muted">{reason ?? 'An account is required for the AI features.'}</p>
+          <div className="auth-tabs" role="tablist">
+            {(['signin', 'signup'] as const).map(m => (
+              <button key={m} type="button" role="tab" aria-selected={mode === m} className={mode === m ? 'active' : ''}
+                      onClick={() => { setMode(m); setError(''); }}>{m === 'signin' ? 'Sign in' : 'Create account'}</button>
+            ))}
+          </div>
+          {reason && <p className="muted">{reason}</p>}
           {config?.googleClientId && (<>
             <div ref={gbtn} className="google-btn" />
-            <div className="or"><span>or with email</span></div>
+            <div className="or"><span>OR</span></div>
           </>)}
           <form onSubmit={submit}>
             {mode === 'signup' && <label>Name <small>(optional)</small><input value={name} onChange={e => setName(e.target.value)} autoComplete="name" maxLength={80} /></label>}
-            <label>Email<input type="email" required value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" /></label>
-            <label>Password{mode === 'signup' && <small> (at least 10 characters)</small>}
-              <input type="password" required minLength={mode === 'signup' ? 10 : 1} maxLength={128} value={password} onChange={e => setPassword(e.target.value)}
+            <label>Email address<input type="email" required placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" /></label>
+            <label>Password
+              <input type="password" required placeholder={mode === 'signup' ? 'At least 10 characters' : 'Your password'} minLength={mode === 'signup' ? 10 : 1} maxLength={128} value={password} onChange={e => setPassword(e.target.value)}
                      autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
             </label>
             {error && <p className="err">{error}</p>}
             <button className="primary wide" disabled={busy}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in'}</button>
           </form>
-          <p className="switch">
-            {mode === 'signup' ? <>Already have an account? <a href="#" onClick={e => { e.preventDefault(); setMode('signin'); setError(''); }}>Sign in</a></>
-              : <>New here? <a href="#" onClick={e => { e.preventDefault(); setMode('signup'); setError(''); }}>Create an account</a></>}
-          </p>
         </>)}
       </div>
     </div>
