@@ -3,9 +3,19 @@
 html, body, #root { height: 100%; margin: 0; }
 body { font-size: 14px; }
 .app { display: flex; flex-direction: column; height: 100%; }
-header { display: flex; gap: 20px; align-items: center; padding: 0 32px; height: 80px; background: var(--header-bg); border-bottom: 1px solid var(--header-divider); }
-header a { color: var(--accent); }
-.logo { height: 40px; width: auto; object-fit: contain; }
+.topbar { display: flex; gap: 14px; align-items: center; padding: 0 max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left)); height: 60px; background: var(--header-bg); border-bottom: 1px solid var(--header-divider); }
+.topbar-brand { display: flex; align-items: center; gap: 10px; flex: none; }
+.topbar-context { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 8px; }
+.ctx-label { flex: none; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); }
+.ctx-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--text-strong); }
+.topbar-actions { display: flex; align-items: center; gap: 12px; flex: none; margin-left: auto; }
+.topbar-actions .share-btn { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; font-weight: 600; }
+.topbar-actions .share-btn svg { margin: 0; }
+.topbar-actions .theme-toggle { height: 44px; }
+.topbar-actions .theme-toggle button { width: 42px; }
+@media (max-width: 760px) { .topbar-context { display: none; } .account-label, .share-btn span { display: none; } .topbar-actions .share-btn { width: 44px; padding: 0; justify-content: center; } }
+@media (max-width: 480px) { .topbar { gap: 8px; padding: 0 12px; } .topbar-actions { gap: 8px; } .logo-text { width: 80px; } .logo { height: 28px; } .topbar-actions .theme-toggle button { width: 38px; } }
+.logo { height: 32px; width: auto; object-fit: contain; }
 /* logo-text.svg is a single-colour glyph: paint it with --brand-text so it works in dark mode */
 .logo-text { display: inline-block; width: 100px; height: 16.5px; background: var(--brand-text);
   -webkit-mask: url(/logo-text.svg) no-repeat center / contain; mask: url(/logo-text.svg) no-repeat center / contain; }
@@ -236,8 +246,9 @@ aside.sidebar[hidden] { display: none; }
 .sidebar-handle:not(.open) svg { transform: rotate(180deg); }
 
 /* Account button in the top bar + account page */
-.account-btn { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 50%; color: var(--accent); }
+.account-btn { display: flex; align-items: center; gap: 8px; min-width: 44px; height: 44px; padding: 0 14px; border-radius: 999px; color: var(--accent); font-weight: 600; justify-content: center; }
 .account-btn.in { background: var(--accent-soft, transparent); }
+.account-label { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--text-strong); }
 .body[hidden] { display: none; }
 .account-page { flex: 1; min-height: 0; overflow: auto; display: grid; place-items: start center; padding: 40px 16px; background: var(--wsi-viewer-bg); }
 .account-card { width: min(520px, 100%); padding: 24px 28px; border-radius: 16px; background: var(--surface); color: var(--text-strong); border: 1px solid var(--border-strong); box-shadow: var(--modal-shadow); }
