@@ -139,15 +139,6 @@ export default function App() {
           <img className="logo" src="/logo.png" alt="Pathy logo" />
           <span className="logo-text" role="img" aria-label="Pathy" />
         </div>
-        {!DEMO && authCfg && (
-          <button className={`account-btn ${user ? 'in' : ''}`}
-                  title={user ? `Your account (${user.email})` : 'Sign up or sign in'}
-                  aria-label={user ? 'Open your account' : 'Sign up or sign in'}
-                  onClick={() => user ? setPage('account') : setAuthModal({})}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>
-            <span className="account-label">{user ? (user.name?.trim() || user.email) : 'Sign in'}</span>
-          </button>
-        )}
         <div className="topbar-context">
           {DEMO ? <span className="muted">DEMO MODE · static sample images, no backend</span>
             : current && page === 'studio' && (<>
@@ -161,6 +152,15 @@ export default function App() {
             <span>Share</span>
           </button>
           <ThemeToggle theme={theme} onChange={setTheme} />
+          {!DEMO && authCfg && (
+            <button className={`account-btn ${user ? 'in' : ''}`}
+                    title={user ? `Your account (${user.email})` : 'Sign up or sign in'}
+                    aria-label={user ? 'Open your account' : 'Sign up or sign in'}
+                    onClick={() => user ? setPage('account') : setAuthModal({})}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>
+              <span className="account-label">{user ? (user.name?.trim() || user.email) : 'Sign in'}</span>
+            </button>
+          )}
         </div>
       </header>
       {page === 'account' && user && (
