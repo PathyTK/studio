@@ -245,7 +245,7 @@ export default function App() {
           {loading && <div className="overlay">Opening slide…</div>}
           {current
             ? <Viewer slide={current} onCount={setCount} reloadKey={reloadKey} user={user} ai={DEMO ? null : authCfg}
-                    onRequireAuth={reason => setAuthModal({ reason })} onSignedOut={() => setUser(null)} onError={setError} />
+                    onRequireAuth={reason => setAuthModal({ reason })} onSignedOut={() => setUser(null)} onError={setError} onNotice={flash} />
             : <div className="empty">
                 <UploadBox large onUploaded={onUploaded} onError={setError} />
                 <p className="muted">…or pick a public slide from the list.</p>

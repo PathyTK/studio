@@ -26,6 +26,7 @@ interface Props {
   onRequireAuth: (reason: string) => void;
   onSignedOut: () => void;
   onError?: (msg: string) => void; // shown to the user as a pop-up
+  onNotice?: (msg: string) => void; // short, non-blocking message (toast)
 }
 
 const icon = (d: React.ReactNode) => (
@@ -51,7 +52,7 @@ class PathyTileSource extends (OpenSeadragon as any).TileSource {
   }
 }
 
-export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireAuth, onSignedOut, onError }: Props) {
+export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireAuth, onSignedOut, onError, onNotice }: Props) {
   const onErrorRef = useRef(onError); onErrorRef.current = onError;
   const [aiOpen, setAiOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
@@ -187,7 +188,8 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
   };
   const toggleAi = () => {
     if (!user) return onRequireAuth('Create your Pathy account to chat with the AI about your slides.');
-    setAiOpen(o => !o);
+    // The chat is not released yet: signed-in users get a heads-up instead of the panel.
+    onNotice?.('We are working on this feature');
   };
 
   // Shortcuts: V pan, R rectangle, P polygon (ignored while typing in the annotation editor)
@@ -259,8 +261,8 @@ export default function Viewer({ slide, onCount, reloadKey, user, ai, onRequireA
         {scaleBar && <div className="scale-bar"><div style={{ width: scaleBar.px }} /><span>{scaleBar.label}</span></div>}
         {zoomInfo}
       </div>
-      {ai?.aiEnabled && (
-        <button className={`ai-launch primary ${aiOpen ? 'on' : ''}`} onClick={toggleAi} title={user ? 'Chat with the AI about this slide' : 'Sign in to use the AI'}>
+      {ai && (
+        <button className={`ai-launch primary ${aiOpen ? 'on' : ''}`} onClick={toggleAi} title={user ? 'AI assistant for this slide (coming soon)' : 'Sign in to use the AI'}>
           {icon(<><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /><path d="M19 3v4M17 5h4M5 17v4M3 19h4" /></>)}
           Ask AI
         </button>
